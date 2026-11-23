@@ -1,0 +1,5 @@
+# compiled output (rebuild with ./compile.sh)
+out/
+bin/
+*.class
+*.jar
