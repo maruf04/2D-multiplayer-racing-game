@@ -60,13 +60,13 @@ if ! command -v java >/dev/null 2>&1 || [[ "$(java_major java)" -lt "$MIN_JAVA" 
     fi
 fi
 
-if [[ ! -f out/racer/Main.class ]]; then
+if [[ ! -f out/racer/Main.class || ! -f out/racer/maps/index.txt || src/racer -nt out/racer ]]; then
     echo ">> Game is not compiled yet - running compile.sh"
     ./compile.sh
 fi
 
-# Low-resource settings: 256 MB max heap, simple single-threaded GC.
-JVM_OPTS=(-Xms64m -Xmx256m -XX:+UseSerialGC)
+# Low-resource settings: 512 MB max heap (fine for 4 GB machines), simple single-threaded GC.
+JVM_OPTS=(-Xms128m -Xmx512m -XX:+UseSerialGC)
 if [[ "${1:-}" == "server" ]]; then
     JVM_OPTS=(-Xms32m -Xmx96m -XX:+UseSerialGC -Djava.awt.headless=true)
 fi

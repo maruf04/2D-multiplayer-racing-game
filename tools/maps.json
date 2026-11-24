@@ -1,0 +1,12 @@
+[
+  {"id": "dhanmondi",  "name": "Dhanmondi Lake",        "city": "Dhaka",          "type": "lake",    "landmark": ["relation/2256206"], "widen": 50, "scale": 2.0},
+  {"id": "hatirjheel", "name": "Hatirjheel",            "city": "Dhaka",          "type": "lake",    "landmark": ["way/315929350", "relation/7390108", "way/223058901"], "widen": 30},
+  {"id": "mirpur",     "name": "Sher-e-Bangla Stadium", "city": "Mirpur, Dhaka",  "type": "stadium", "landmark": ["way/121390579"]},
+  {"id": "chattogram", "name": "Foy's Lake",            "city": "Chattogram",     "type": "lake",    "landmark": ["relation/1794287"], "widen": 40},
+  {"id": "sylhet",     "name": "Tilagarh Eco Park",     "city": "Sylhet",         "type": "park",    "landmark": ["way/1012210596"]},
+  {"id": "rajshahi",   "name": "University of Rajshahi","city": "Rajshahi",       "type": "campus",  "landmark": ["way/204853987"]},
+  {"id": "khulna",     "name": "Khulna University",     "city": "Khulna",         "type": "campus",  "landmark": ["way/627577284"]},
+  {"id": "barishal",   "name": "Durga Sagar",           "city": "Barishal",       "type": "lake",    "landmark": ["relation/5134277"], "widen": 0},
+  {"id": "rangpur",    "name": "Chiklir Beel",          "city": "Rangpur",        "type": "lake",    "landmark": ["way/180017961"], "widen": 20},
+  {"id": "mymensingh", "name": "BAU Botanical Garden",  "city": "Mymensingh",     "type": "park",    "landmark": ["way/441263551"]}
+]

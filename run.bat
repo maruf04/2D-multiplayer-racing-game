@@ -39,7 +39,7 @@ if not "!JAVA_OK!"=="1" (
 for /f "tokens=*" %%V in ('java -version 2^>^&1 ^| findstr /i "version"') do echo ^>^> Using %%V
 
 rem ---- 2. Compile if needed ---------------------------------------------------
-if exist "out\racer\Main.class" goto :run
+if exist "out\racer\maps\index.txt" goto :run
 echo ^>^> Game is not compiled yet - compiling...
 if exist out rmdir /s /q out
 mkdir out
@@ -50,11 +50,12 @@ if errorlevel 1 (
     echo !! Compilation failed.
     goto :fail
 )
+xcopy /e /i /y /q src\racer\maps out\racer\maps >nul
 echo ^>^> Compiled successfully into .\out
 
-rem ---- 3. Run (256 MB max heap, simple GC for low-end machines) -----------------
+rem ---- 3. Run (512 MB max heap, simple GC - fine for 4 GB machines) --------------
 :run
-set JVM_OPTS=-Xms64m -Xmx256m -XX:+UseSerialGC
+set JVM_OPTS=-Xms128m -Xmx512m -XX:+UseSerialGC
 if /i "%~1"=="server" set JVM_OPTS=-Xms32m -Xmx96m -XX:+UseSerialGC -Djava.awt.headless=true
 java %JVM_OPTS% -cp out racer.Main %*
 popd

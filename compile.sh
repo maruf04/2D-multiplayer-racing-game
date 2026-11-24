@@ -60,5 +60,6 @@ echo ">> Using $(javac -version 2>&1)"
 rm -rf out
 mkdir -p out
 javac --release "$MIN_JAVA" -encoding UTF-8 -d out src/racer/*.java
+cp -r src/racer/maps out/racer/   # the race tracks (made by tools/make_maps.py)
 echo ">> Compiled successfully into ./out"
 echo ">> Start the game with: ./run.sh"

@@ -3,3 +3,7 @@ out/
 bin/
 *.class
 *.jar
+
+# downloaded OpenStreetMap data (re-download with: python3 tools/make_maps.py fetch)
+tools/osm/*_area.json
+tools/osm/preview.png

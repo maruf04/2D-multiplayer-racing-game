@@ -1,15 +1,8 @@
 package racer;
 
-import javax.swing.BorderFactory;
-import javax.swing.ButtonGroup;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
-import java.awt.GridLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.net.Inet4Address;
@@ -21,24 +14,34 @@ import java.util.List;
 
 /**
  * Entry point.
- *   java -jar racer.jar                         -> launcher window (host or join)
- *   java -jar racer.jar server [port]           -> dedicated headless server
- *   java -jar racer.jar host [port] [name]      -> host + play, no dialog
- *   java -jar racer.jar join <ip> [port] [name] -> join, no dialog
+ *   run.sh                                              -> start window (host or join)
+ *   run.sh server [port] [aiCars] [track]               -> dedicated headless server
+ *   run.sh host [port] [name] [aiCars] [track] [vehicle] -> host + play, no start window
+ *   run.sh join <ip> [port] [name] [vehicle]            -> join, no start window
+ *   run.sh tracks                                       -> list the track names
+ * vehicle = cycle | motorbike | car | rickshaw
  */
 public final class Main {
     public static void main(String[] args) throws Exception {
         String mode = args.length > 0 ? args[0].toLowerCase() : "";
         switch (mode) {
+            case "tracks" -> {
+                for (MapData.Info i : MapData.list()) System.out.println(i.id() + "  -  " + i.title());
+            }
             case "server" -> {
                 int port = args.length > 1 ? Integer.parseInt(args[1]) : Protocol.DEFAULT_PORT;
-                new GameServer(port).start();
+                int ai = args.length > 2 ? Integer.parseInt(args[2]) : Protocol.DEFAULT_AI;
+                String track = args.length > 3 ? args[3] : MapData.defaultId();
+                new GameServer(port, ai, track).start();
                 System.out.println("[server] LAN address(es): " + lanAddresses() + "  - press Ctrl+C to stop");
             }
             case "host" -> {
                 int port = args.length > 1 ? Integer.parseInt(args[1]) : Protocol.DEFAULT_PORT;
                 String name = args.length > 2 ? args[2] : System.getProperty("user.name", "Host");
-                SwingUtilities.invokeLater(() -> launch(true, "localhost", port, name));
+                int ai = args.length > 3 ? Integer.parseInt(args[3]) : Protocol.DEFAULT_AI;
+                String track = args.length > 4 ? args[4] : MapData.defaultId();
+                int vehicle = args.length > 5 ? vehicle(args[5]) : Protocol.CAR;
+                launch(new Launcher.Choice(true, "localhost", port, name, ai, track, vehicle, null), null);
             }
             case "join" -> {
                 if (args.length < 2) {
@@ -47,79 +50,62 @@ public final class Main {
                 }
                 int port = args.length > 2 ? Integer.parseInt(args[2]) : Protocol.DEFAULT_PORT;
                 String name = args.length > 3 ? args[3] : System.getProperty("user.name", "Player");
-                SwingUtilities.invokeLater(() -> launch(false, args[1], port, name));
+                int vehicle = args.length > 4 ? vehicle(args[4]) : Protocol.CAR;
+                launch(new Launcher.Choice(false, args[1], port, name, 0, "", vehicle, null), null);
             }
             default -> SwingUtilities.invokeLater(Main::showLauncher);
         }
     }
 
-    private static void showLauncher() {
-        JTextField name = new JTextField(System.getProperty("user.name", "Player"));
-        JTextField address = new JTextField("localhost");
-        JTextField port = new JTextField(String.valueOf(Protocol.DEFAULT_PORT));
-        JRadioButton host = new JRadioButton("Host a game (others join you)", true);
-        JRadioButton join = new JRadioButton("Join a game");
-        ButtonGroup group = new ButtonGroup();
-        group.add(host);
-        group.add(join);
-        address.setEnabled(false);
-        host.addActionListener(e -> address.setEnabled(false));
-        join.addActionListener(e -> address.setEnabled(true));
-
-        JPanel p = new JPanel(new GridLayout(0, 1, 4, 4));
-        p.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
-        p.add(new JLabel("Your name:"));
-        p.add(name);
-        p.add(host);
-        p.add(join);
-        p.add(new JLabel("Server IP address (when joining):"));
-        p.add(address);
-        p.add(new JLabel("TCP port:"));
-        p.add(port);
-
-        int res = JOptionPane.showConfirmDialog(null, p, "Net Racer - up to " + Protocol.MAX_PLAYERS + " players",
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (res != JOptionPane.OK_OPTION) System.exit(0);
-
-        int portNum;
-        try {
-            portNum = Integer.parseInt(port.getText().trim());
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(null, "Port must be a number.");
-            showLauncher();
-            return;
+    private static int vehicle(String name) {
+        for (int i = 0; i < Protocol.VEHICLE_NAMES.length; i++) {
+            if (Protocol.VEHICLE_NAMES[i].equalsIgnoreCase(name)) return i;
         }
-        launch(host.isSelected(), host.isSelected() ? "localhost" : address.getText().trim(), portNum, name.getText().trim());
+        return Protocol.CAR;
     }
 
-    /** Starts the (optional) local server and connects, off the UI thread. Must be called on the EDT. */
-    private static void launch(boolean hosting, String address, int port, String name) {
-        GameClient client = new GameClient(hosting ? "Friends join at " + lanAddresses() + "  port " + port : null);
+    private static void showLauncher() {
+        Launcher[] holder = new Launcher[1];
+        holder[0] = new Launcher(choice -> launch(choice, holder[0]));
+        holder[0].setVisible(true);
+    }
+
+    /** Starts the (optional) local server and connects, off the UI thread. */
+    private static void launch(Launcher.Choice c, Launcher launcher) {
+        GameClient client = new GameClient(null);
         new Thread(() -> {
             GameServer server = null;
             try {
-                if (hosting) {
-                    server = new GameServer(port);
+                if (c.host()) {
+                    server = new GameServer(c.port(), c.aiCars(), c.mapId());
                     server.start();
+                    client.setHostInfo(hostInfo(c.network(), server.port()));
                 }
-                client.connect(address, port, name);
+                client.connect(c.address(), server != null ? server.port() : c.port(), c.name(), c.vehicle());
             } catch (Exception e) {
                 if (server != null) server.stop();
                 String msg = e.getMessage() == null ? e.toString() : e.getMessage();
+                String text = (c.host() ? "Could not host: " : "Could not join: ") + msg;
                 SwingUtilities.invokeLater(() -> {
-                    JOptionPane.showMessageDialog(null, (hosting ? "Could not host: " : "Could not join: ") + msg,
-                            "Net Racer", JOptionPane.ERROR_MESSAGE);
-                    showLauncher();
+                    if (launcher != null) {
+                        launcher.showError(text);
+                    } else {
+                        JOptionPane.showMessageDialog(null, text, "Bangladesh City Racing", JOptionPane.ERROR_MESSAGE);
+                        System.exit(1);
+                    }
                 });
                 return;
             }
             GameServer finalServer = server;
-            SwingUtilities.invokeLater(() -> openWindow(client, finalServer));
+            SwingUtilities.invokeLater(() -> {
+                if (launcher != null) launcher.dispose();
+                openWindow(client, finalServer);
+            });
         }, "connect").start();
     }
 
     private static void openWindow(GameClient client, GameServer server) {
-        JFrame frame = new JFrame(server != null ? "Net Racer (hosting)" : "Net Racer");
+        JFrame frame = new JFrame(server != null ? "Bangladesh City Racing (hosting)" : "Bangladesh City Racing");
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
             @Override public void windowClosing(WindowEvent e) {
@@ -131,8 +117,18 @@ public final class Main {
         frame.add(client);
         frame.pack();
         frame.setLocationRelativeTo(null);
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);   // full screen size, still a normal window
         frame.setVisible(true);
         client.requestFocusInWindow();
+    }
+
+    /** Lobby line for the host: friends on the same Wi-Fi find the game by themselves. */
+    static String hostInfo(Lan.Network net, int port) {
+        if (net != null) {
+            return "Friends on " + net.shortName() + " will see this game under JOIN A GAME   (or type "
+                    + net.address().getHostAddress() + (port == Protocol.DEFAULT_PORT ? "" : ":" + port) + ")";
+        }
+        return "Friends join at " + lanAddresses() + (port == Protocol.DEFAULT_PORT ? "" : "  port " + port);
     }
 
     static String lanAddresses() {

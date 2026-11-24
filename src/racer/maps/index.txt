@@ -1,0 +1,10 @@
+dhanmondi|Dhanmondi Lake|Dhaka|lake
+hatirjheel|Hatirjheel|Dhaka|lake
+mirpur|Sher-e-Bangla Stadium|Mirpur, Dhaka|stadium
+chattogram|Foy's Lake|Chattogram|lake
+sylhet|Tilagarh Eco Park|Sylhet|park
+rajshahi|University of Rajshahi|Rajshahi|campus
+khulna|Khulna University|Khulna|campus
+barishal|Durga Sagar|Barishal|lake
+rangpur|Chiklir Beel|Rangpur|lake
+mymensingh|BAU Botanical Garden|Mymensingh|park
